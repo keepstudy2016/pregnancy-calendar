@@ -35,9 +35,9 @@ function persist(){try{localStorage.setItem('spring-calendar-v1',JSON.stringify(
 $('#current').textContent=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天`;
 $('#remaining').textContent=today<=due?`${Math.ceil((due-today)/DAY)} 天`:`已过 ${Math.floor((today-due)/DAY)} 天`;
 const appointmentDate=Date.UTC(2026,10,19);
-$('#hero-countdown').textContent=today<=due?`距离见面还有 ${Math.ceil((due-today)/DAY)} 天`:`距预产期已过 ${Math.floor((today-due)/DAY)} 天`;
 $('#appointment-countdown').textContent=today<appointmentDate?`还有 ${Math.ceil((appointmentDate-today)/DAY)} 天 →`:today===appointmentDate?'就是今天 →':'查看预约 →';
-$('#appointment').onclick=()=>choose(appointmentDate);
+$('#appointment').onclick=()=>{choose(appointmentDate);$('#grid').scrollIntoView({behavior:'smooth',block:'center'})};
+$('#date-explain').onclick=()=>{$('#sources').open=true};
 function choose(t){selected=Math.min(due,Math.max(start,t));if(selected<viewStart||selected>viewStart+20*DAY)viewStart=viewFor(selected);render()}
 function render(){let w=week(selected);$('#month-title').textContent=`${short(viewStart)} — ${short(viewStart+20*DAY)}`;$('#month-en').textContent=`${new Date(viewStart).getUTCFullYear()} · THREE WEEKS`;
 $('#prev').disabled=viewStart<=minView;$('#next').disabled=viewStart>=maxView;
