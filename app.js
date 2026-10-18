@@ -28,8 +28,8 @@ const $=s=>document.querySelector(s), fmt=t=>new Date(t).toISOString().slice(0,1
 const today=Date.parse(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())+'T00:00:00Z');
 let selected=Math.min(due,Math.max(start,today)),saved={};try{saved=JSON.parse(localStorage.getItem('spring-calendar-v1')||'{}')||{}}catch{}
 const monday=t=>t-((new Date(t).getUTCDay()+6)%7)*DAY;
-const minView=monday(start),maxView=monday(due)-14*DAY;
-const viewFor=t=>Math.min(maxView,Math.max(minView,monday(t)-7*DAY));
+const minView=monday(start),maxView=monday(due);
+const viewFor=t=>Math.min(maxView,Math.max(minView,monday(t)));
 let viewStart=viewFor(selected);
 function persist(){try{localStorage.setItem('spring-calendar-v1',JSON.stringify(saved));return true}catch{return false}}
 $('#current').textContent=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天`;
