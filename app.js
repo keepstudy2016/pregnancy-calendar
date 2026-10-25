@@ -33,7 +33,7 @@ const minView=monday(start),maxView=monday(due);
 const viewFor=t=>Math.min(maxView,Math.max(minView,monday(t)));
 let viewStart=viewFor(selected);
 function persist(){try{localStorage.setItem('spring-calendar-v1',JSON.stringify(saved));return true}catch{return false}}
-$('#current').textContent=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天`;
+$('#current').innerHTML=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天<small class="gest-total">共 ${gest(today)} 天</small>`;
 const appointmentDate=Date.UTC(2026,10,19);
 $('#appointment-countdown').textContent=today<appointmentDate?`还有 ${Math.ceil((appointmentDate-today)/DAY)} 天 →`:today===appointmentDate?'就是今天 →':'查看预约 →';
 $('#appointment').onclick=()=>{choose(appointmentDate);$('#grid').scrollIntoView({behavior:'smooth',block:'center'})};
@@ -53,7 +53,7 @@ function countdownParts(target,now){let seconds=Math.max(0,Math.floor((target-no
 function tick(now=Date.now()){
  const day=beijingDay(now);
  if(day!==today){const followingToday=selected===today;today=day;if(followingToday){selected=Math.min(due,Math.max(start,today));viewStart=viewFor(selected)}render()}
- $('#current').textContent=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天`;
+ $('#current').innerHTML=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天<small class="gest-total">共 ${gest(today)} 天</small>`;
  const p=countdownParts(dueInstant,now),pad=n=>String(n).padStart(2,'0');
  $('#remaining').innerHTML=now>=dueInstant?'已到预产期':`<span>${p.days} 天</span><small class="clock-digits">${pad(p.hours)}时 ${pad(p.minutes)}分 ${pad(p.seconds)}秒</small>`;
  $('#appointment-countdown').textContent=today<appointmentDate?`还有 ${Math.ceil((appointmentDate-today)/DAY)} 天 →`:today===appointmentDate?'就是今天 →':'查看预约 →';
