@@ -25,7 +25,8 @@ const rows=[
 ['预产期，是一个预计的相遇','今天为40周+0天，预产期不是必须分娩的截止日期。','若尚未分娩，请按医生安排继续复诊并讨论后续计划。','有出血、流水、胎动减少或其他警示症状，及时联系产科。']
 ];
 const $=s=>document.querySelector(s), fmt=t=>new Date(t).toISOString().slice(0,10), short=t=>{let d=new Date(t);return `${d.getUTCMonth()+1}月${d.getUTCDate()}日`}, gest=t=>Math.floor((t-base)/DAY), week=t=>Math.floor(gest(t)/7);
-const today=Date.parse(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())+'T00:00:00Z');
+const beijingDay=now=>Math.floor((now+8*3600000)/DAY)*DAY;
+let today=beijingDay(Date.now());
 let selected=Math.min(due,Math.max(start,today)),saved={};try{saved=JSON.parse(localStorage.getItem('spring-calendar-v1')||'{}')||{}}catch{}
 const monday=t=>t-((new Date(t).getUTCDay()+6)%7)*DAY;
 const minView=monday(start),maxView=monday(due);
@@ -33,7 +34,6 @@ const viewFor=t=>Math.min(maxView,Math.max(minView,monday(t)));
 let viewStart=viewFor(selected);
 function persist(){try{localStorage.setItem('spring-calendar-v1',JSON.stringify(saved));return true}catch{return false}}
 $('#current').textContent=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天`;
-$('#remaining').textContent=today<=due?`${Math.ceil((due-today)/DAY)} 天`:`已过 ${Math.floor((today-due)/DAY)} 天`;
 const appointmentDate=Date.UTC(2026,10,19);
 $('#appointment-countdown').textContent=today<appointmentDate?`还有 ${Math.ceil((appointmentDate-today)/DAY)} 天 →`:today===appointmentDate?'就是今天 →':'查看预约 →';
 $('#appointment').onclick=()=>{choose(appointmentDate);$('#grid').scrollIntoView({behavior:'smooth',block:'center'})};
@@ -41,9 +41,21 @@ $('#date-explain').onclick=()=>{$('#sources').open=true};
 function choose(t){selected=Math.min(due,Math.max(start,t));if(selected<viewStart||selected>viewStart+20*DAY)viewStart=viewFor(selected);render()}
 function render(){let w=week(selected);$('#month-title').textContent=`${short(viewStart)} — ${short(viewStart+20*DAY)}`;$('#month-en').textContent=`${new Date(viewStart).getUTCFullYear()} · THREE WEEKS`;
 $('#prev').disabled=viewStart<=minView;$('#next').disabled=viewStart>=maxView;
-$('#grid').replaceChildren();for(let i=0;i<21;i++){let t=viewStart+i*DAY,d=new Date(t),valid=t>=start&&t<=due,b=document.createElement('button');b.className='day'+(!valid?' disabled':'')+(valid&&week(t)===w?' inweek':'')+(t===selected?' selected':'')+(t===today?' today':'');b.disabled=!valid;b.setAttribute('aria-pressed',String(t===selected));b.setAttribute('aria-label',`${fmt(t)}${valid?` 孕${week(t)}周${gest(t)%7}天`:''}`);let mark=t===appointmentDate?'三级超声':t===start?'日历起点':t===due?'预产期':valid&&gest(t)%7===0?`${week(t)}周开始`:'';b.innerHTML=`<span class="num">${d.getUTCDate()}</span><small>${valid?`${week(t)}周+${gest(t)%7}天`:'&nbsp;'}</small>${mark?`<span class="tag">${mark}</span>`:''}`;b.onclick=()=>choose(t);$('#grid').append(b)}
+$('#grid').replaceChildren();for(let i=0;i<21;i++){let t=viewStart+i*DAY,d=new Date(t),valid=t>=start&&t<=due,b=document.createElement('button');b.className='day'+(!valid?' disabled':'')+(valid&&week(t)===w?' inweek':'')+(t===selected?' selected':'')+(t===today?' today':'')+(t<today?' past':'');b.disabled=!valid;b.setAttribute('aria-pressed',String(t===selected));b.setAttribute('aria-label',`${fmt(t)}${valid?` 孕${week(t)}周${gest(t)%7}天`:''}`);let mark=t===appointmentDate?'三级超声':t===start?'日历起点':t===due?'预产期':valid&&gest(t)%7===0?`${week(t)}周开始`:'';b.innerHTML=`<span class="num">${d.getUTCDate()}</span><small>${valid?`${week(t)}周+${gest(t)%7}天`:'&nbsp;'}</small>${mark?`<span class="tag">${mark}</span>`:''}`;b.onclick=()=>choose(t);$('#grid').append(b)}
 let data=rows[w-18],ws=base+w*7*DAY,we=Math.min(due,ws+6*DAY);$('#detail').innerHTML=`<div><span class="pill">${w<28?'孕中期':'孕晚期'} · ${fmt(selected)}</span><h2>孕 ${w} 周 <span style="font:12px sans-serif;color:var(--muted)">/ ${gest(selected)} 天</span></h2><p class="range">${short(ws)} — ${short(we)}</p><h3>${data[0]}</h3>${appointmentDate>=ws&&appointmentDate<=we?'<p style="padding:10px;background:#edf1e6;border-radius:8px;color:var(--green);font-size:12px">已预约：11月19日 · 三级超声<br>具体时间和准备要求以医院通知为准。</p>':''}<div class="tasks">${data.slice(1).map((s,i)=>`<label class="task"><input type="checkbox" data-key="${w}-${i}" ${saved[w+'-'+i]?'checked':''}><span>${s}</span></label>`).join('')}</div></div><div><label for="note"><p style="font-size:12px;margin-top:16px">本周随记</p></label><textarea id="note" class="note" placeholder="记下想问医生的问题，或今天的小心情…"></textarea><div class="save" id="save-status">仅保存在当前浏览器</div></div><div class="weekmove"><button id="wp" ${w===18?'disabled':''}>← 上一周</button><button id="wn" ${w===40?'disabled':''}>下一周 →</button></div>`;
 $('#note').value=typeof saved['note'+w]==='string'?saved['note'+w]:'';$('#note').oninput=e=>{saved['note'+w]=e.target.value;$('#save-status').textContent=persist()?'已保存在当前浏览器':'当前浏览器无法保存，请复制留存'};document.querySelectorAll('[data-key]').forEach(el=>el.onchange=()=>{saved[el.dataset.key]=el.checked;if(!persist())$('#save-status').textContent='当前浏览器无法保存，请复制留存'});$('#wp').onclick=()=>choose(ws-7*DAY);$('#wn').onclick=()=>choose(ws+7*DAY)}
 $('#prev').onclick=()=>{viewStart=Math.max(minView,viewStart-7*DAY);choose(Math.max(start,Math.min(selected,viewStart+20*DAY)))};$('#next').onclick=()=>{viewStart=Math.min(maxView,viewStart+7*DAY);choose(Math.min(due,Math.max(selected,viewStart)))};$('#today').onclick=()=>{viewStart=viewFor(Math.min(due,Math.max(start,today)));choose(today)};
 [[20,'结构超声','孕中期 · 具体窗口以医院为准'],[24,'糖尿病筛查','常见窗口：24—28周'],[28,'进入孕晚期','侧卧入睡 · 关注胎动'],[36,'分娩前的准备','核对胎位、GBS及入院安排']].forEach(([w,title,desc])=>{let b=document.createElement('button');b.className='milestone';b.innerHTML=`<span class="eyebrow">WEEK ${w} · ${short(base+w*7*DAY)}</span><b>${title} ↗</b><small>${desc}</small>`;b.onclick=()=>choose(base+w*7*DAY);$('#milestones').append(b)});
 $('#print').onclick=()=>{$('#printall').innerHTML='<h1>春日来信 · 每周孕期日历</h1><p>怀孕日期记录：2026.06.15 · 126天（2026.10.17）起 · 预产期 2027.03.20 · 已预约：2026.11.19 三级超声</p>'+rows.map((r,i)=>`<section><h3>孕${i+18}周 · ${fmt(base+(i+18)*7*DAY)} — ${fmt(Math.min(due,base+(i+18)*7*DAY+6*DAY))} · ${r[0]}</h3><ul>${r.slice(1).map(t=>`<li>${t}</li>`).join('')}</ul></section>`).join('');window.print()};render();
+
+const dueInstant=Date.parse('2027-03-20T00:00:00+08:00');
+function countdownParts(target,now){let seconds=Math.max(0,Math.floor((target-now)/1000));return {days:Math.floor(seconds/86400),hours:Math.floor(seconds%86400/3600),minutes:Math.floor(seconds%3600/60),seconds:seconds%60}}
+function tick(now=Date.now()){
+ const day=beijingDay(now);
+ if(day!==today){const followingToday=selected===today;today=day;if(followingToday){selected=Math.min(due,Math.max(start,today));viewStart=viewFor(selected)}render()}
+ $('#current').textContent=today<start?'旅程尚未开始':today>due?'已过预产期':`${week(today)}周 + ${gest(today)%7}天`;
+ const p=countdownParts(dueInstant,now),pad=n=>String(n).padStart(2,'0');
+ $('#remaining').innerHTML=now>=dueInstant?'已到预产期':`<span>${p.days} 天</span><small class="clock-digits">${pad(p.hours)}时 ${pad(p.minutes)}分 ${pad(p.seconds)}秒</small>`;
+ $('#appointment-countdown').textContent=today<appointmentDate?`还有 ${Math.ceil((appointmentDate-today)/DAY)} 天 →`:today===appointmentDate?'就是今天 →':'查看预约 →';
+}
+tick();setInterval(()=>tick(),1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
